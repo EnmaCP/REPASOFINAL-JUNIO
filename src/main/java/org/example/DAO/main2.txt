@@ -1,0 +1,108 @@
+
+        /*
+        PeliculaDAOImpl peliculaDAO =
+                new PeliculaDAOImpl(
+                        motorSQL
+                );
+
+        /*
+         * FIND ALL
+         */
+
+        System.out.println(
+                "=== FIND ALL ===");
+
+        ArrayList<Pelicula> peliculas =
+                peliculaDAO.findAll();
+
+        for(Pelicula pelicula : peliculas){
+
+            System.out.println(
+                    pelicula);
+        }
+
+        /*
+         * INSERT
+         */
+
+        Pelicula nueva =
+                new Pelicula(
+                        "Matrix",
+                        "Wachowski",
+                        "Ciencia ficción",
+                        1999,
+                        136
+                );
+
+        peliculaDAO.add(nueva);
+
+        /*
+         * FIND ID
+         */
+
+        System.out.println(
+                "=== FIND ID ===");
+
+        Pelicula pelicula =
+                peliculaDAO.find(1);
+
+        System.out.println(
+                pelicula);
+
+        /*
+         * UPDATE
+         */
+
+        Pelicula update =
+                new Pelicula(
+                        "Interstellar 2",
+                        "Christopher Nolan",
+                        "Ciencia ficción",
+                        2025,
+                        180
+                );
+
+        peliculaDAO.update(
+                1,
+                update
+        );
+
+        /*
+         * DELETE
+         */
+
+        peliculaDAO.delete(2);
+
+        /*
+         * FIND GENERO
+         */
+
+        System.out.println(
+                "=== FIND GENERO ===");
+
+        ArrayList<Pelicula> cienciaFiccion =
+                peliculaDAO.findByGenero(
+                        "Ciencia ficción"
+                );
+
+        for(Pelicula p : cienciaFiccion){
+
+            System.out.println(p);
+        }
+
+        /*
+         * FIND DIRECTOR
+         */
+
+        System.out.println(
+                "=== FIND DIRECTOR ===");
+
+        ArrayList<Pelicula> nolan =
+                peliculaDAO.findByDirector(
+                        "Christopher Nolan"
+                );
+
+        for(Pelicula p : nolan){
+
+            System.out.println(p);
+        }
