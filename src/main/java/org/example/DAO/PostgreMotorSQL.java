@@ -8,7 +8,7 @@ public class PostgreMotorSQL extends MotorSQL {
     private static final String USER =
             "postgres";
     private static final String PASSWORD =
-            "12345678";
+            "123456789";
     private static final String DRIVER =
             "org.postgresql.Driver";
     public PostgreMotorSQL(){

@@ -18,7 +18,7 @@ public class IncidenteDAOImpl
     @Override
     public void add(Incidente object) {
         //definimos la consulta sql
-        String sql = "INSERT INTO INCIDENTES (CODIGO_INCIDENTE, TIPO_INCIDENTE, FECHA_DETECCION, ESTADO, AUTOR_EXAMEN, FK_SOC_ID" +
+        String sql = "INSERT INTO INCIDENTES (CODIGO_INCIDENTE, TIPO_INCIDENTE, FECHA_DETECCION, ESTADO, AUTOR_EXAMEN, FK_SOC_ID)" +
                 "VALUES (?,?,?,?,?,?)";
         try{
             // 1º) CONECTAR
