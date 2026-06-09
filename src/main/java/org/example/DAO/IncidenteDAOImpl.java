@@ -3,6 +3,7 @@ package org.example.DAO;
 import org.example.beans.Incidente;
 import org.example.beans.Socs;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.sql.SQLOutput;
@@ -83,6 +84,45 @@ public class IncidenteDAOImpl
         //TEST 3: ELIMINAR
         incidenteDAOImpl.delete(4);
 
+
+        // ==========================================
+        // TEST 4: FIND (Buscar un incidente por ID)
+        // ==========================================
+        System.out.println("\n--- TEST 3: BÚSQUEDA POR ID ---");
+        // Cambia el '1' por el ID que sepas que existe en tu base de datos local
+        Incidente incidenteEncontrado = incidenteDAOImpl.find(1);
+
+        if (incidenteEncontrado != null) {
+            System.out.println("Incidente encontrado con éxito:");
+            System.out.println("   - ID en BD: " + incidenteEncontrado.getId());
+            System.out.println("   - Código: " + incidenteEncontrado.getCodigoIncidente());
+            System.out.println("   - Tipo: " + incidenteEncontrado.getTipoIncidente());
+            System.out.println("   - Estado: " + incidenteEncontrado.getEstado());
+            // Imprimimos el ID del SOC, que es el único dato que mapeamos
+            System.out.println("   - Pertenece al SOC con ID: " + incidenteEncontrado.getSoc().getId());
+        } else {
+            System.out.println("No se encontró ningún incidente con ese ID.");
+        }
+
+        //==========================================
+        // TEST 5: FIND ALL (Buscar todos)
+        // ==========================================
+        System.out.println("\n--- TEST 4: BÚSQUEDA DE TODOS LOS INCIDENTES ---");
+        ArrayList<Incidente> todosLosIncidentes = incidenteDAOImpl.findAll();
+
+        if (todosLosIncidentes.isEmpty()) {
+            System.out.println("La tabla de incidentes está vacía.");
+        } else {
+            System.out.println("Se han encontrado " + todosLosIncidentes.size() + " incidentes en total:");
+            // Recorremos la lista para imprimir un resumen de cada uno
+            for (Incidente inc : todosLosIncidentes) {
+                System.out.println("   -> ID: " + inc.getId() +
+                        " | Código: " + inc.getCodigoIncidente() +
+                        " | Estado: " + inc.getEstado() +
+                        " | SOC ID: " + inc.getSoc().getId());
+            }
+        }
+
     }
 
 
@@ -153,17 +193,73 @@ public class IncidenteDAOImpl
         }
 
 
-
-
     }
 
     @Override
     public Incidente find(int id) {
-        return null;
+        //Consulta simple sin inner joins
+        String sql = "SELECT * FROM INCIDENTES WHERE id = ?";
+        Incidente incidente = null;
+
+        try{
+            motorSQL.connect();
+            PreparedStatement ps = motorSQL.prepare(sql);
+            ps.setInt(1, id);
+
+            ResultSet rs = motorSQL.executeQuery();
+
+            if(rs.next()){
+                incidente = new Incidente();
+                incidente.setId(rs.getInt("ID"));
+                incidente.setCodigoIncidente(rs.getString("CODIGO_INCIDENTE"));
+                incidente.setTipoIncidente(rs.getString("TIPO_INCIDENTE"));
+                incidente.setFechaDeteccion(rs.getString("FECHA_DETECCION"));
+                incidente.setEstado(rs.getString("ESTADO"));
+                incidente.setAutorExamen(rs.getString("AUTOR_EXAMEN"));
+
+                //MAPEO SIMPLIFICADO
+                Socs soc = new Socs(rs.getInt("FK_SOC_ID"));
+                incidente.setSoc(soc);
+            }
+        }catch (SQLException e){
+            System.out.println("Error al obtener el incidente: "+ e.getMessage());
+        }finally{
+            motorSQL.close();
+        }
+        return incidente;
     }
 
     @Override
     public ArrayList<Incidente> findAll() {
-        return null;
+        //consulta simple a una sola tabla
+        String sql = "SELECT * FROM INCIDENTES";
+        ArrayList<Incidente> incidentes = new ArrayList<>();
+
+        try{
+            motorSQL.connect();
+            PreparedStatement ps = motorSQL.prepare(sql);
+            ResultSet rs = motorSQL.executeQuery();
+
+            while(rs.next()){
+                Incidente incidente = new Incidente();
+                incidente.setId(rs.getInt("ID"));
+                incidente.setCodigoIncidente(rs.getString("CODIGO_INCIDENTE"));
+                incidente.setTipoIncidente(rs.getString("TIPO_INCIDENTE"));
+                incidente.setFechaDeteccion(rs.getString("FECHA_DETECCION"));
+                incidente.setEstado(rs.getString("ESTADO"));
+                incidente.setAutorExamen(rs.getString("AUTOR_EXAMEN"));
+
+                //Mapeo simple
+                Socs soc = new Socs(rs.getInt("FK_SOC_ID"));
+                incidente.setSoc(soc);
+                //lo añadimos a la lista de incidentes
+                incidentes.add(incidente);
+            }
+        }catch (SQLException e){
+            System.out.println("Error al obtener la lista de incidentes: "+ e.getMessage());
+        }finally{
+            motorSQL.close();
+        }
+        return incidentes;
     }
 }
