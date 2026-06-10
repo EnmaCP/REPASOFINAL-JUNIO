@@ -8,10 +8,11 @@ public class Incidente {
     private String estado;
     private String autorExamen;
     private Socs soc;
+    private InformeIncidente informe;
 
     public Incidente() {
     }
-    public Incidente(int id, String codigoIncidente, String tipoIncidente, String fechaDeteccion, String estado, String autorExamen, Socs soc) {
+    public Incidente(int id, String codigoIncidente, String tipoIncidente, String fechaDeteccion, String estado, String autorExamen, Socs soc, InformeIncidente informe) {
         this.id = id;
         this.codigoIncidente = codigoIncidente;
         this.tipoIncidente = tipoIncidente;
@@ -19,6 +20,7 @@ public class Incidente {
         this.estado = estado;
         this.autorExamen = autorExamen;
         this.soc = soc;
+        this.informe = informe;
     }
 
     public int getId() {
@@ -63,5 +65,13 @@ public class Incidente {
 
     public void setSoc(Socs soc) {
         this.soc = soc;
+    }
+
+    public InformeIncidente getInforme() {
+        return informe;
+    }
+
+    public void setInforme(InformeIncidente informe) {
+        this.informe = informe;
     }
 }

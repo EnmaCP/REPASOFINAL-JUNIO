@@ -1,6 +1,7 @@
 package org.example.DAO;
 
 import org.example.beans.Incidente;
+import org.example.beans.InformeIncidente;
 import org.example.beans.Socs;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,7 +11,7 @@ import java.sql.SQLOutput;
 import java.util.ArrayList;
 
 public class IncidenteDAOImpl
-    extends AbstractDAO<Incidente> {
+        extends AbstractDAO<Incidente> {
 
     public IncidenteDAOImpl(MotorSQL motorSQL) {
         super(motorSQL);
@@ -37,7 +38,7 @@ public class IncidenteDAOImpl
             //Para sacar el ID del SOC, navegamos a través del objeto anidado
             ps.setInt(6, object.getSoc().getId());
             // 3º) EJECUTAR UPDATE
-           int rows = motorSQL.executeUpdate();
+            int rows = motorSQL.executeUpdate();
 
         } catch (SQLException e) {
             System.out.println("Error al añadir incidente: " + e.getMessage());
@@ -88,7 +89,7 @@ public class IncidenteDAOImpl
         // ==========================================
         // TEST 4: FIND (Buscar un incidente por ID)
         // ==========================================
-        System.out.println("\n--- TEST 3: BÚSQUEDA POR ID ---");
+        System.out.println("\n--- TEST 4: BÚSQUEDA POR ID ---");
         // Cambia el '1' por el ID que sepas que existe en tu base de datos local
         Incidente incidenteEncontrado = incidenteDAOImpl.find(1);
 
@@ -107,7 +108,7 @@ public class IncidenteDAOImpl
         //==========================================
         // TEST 5: FIND ALL (Buscar todos)
         // ==========================================
-        System.out.println("\n--- TEST 4: BÚSQUEDA DE TODOS LOS INCIDENTES ---");
+        System.out.println("\n--- TEST 5: BÚSQUEDA DE TODOS LOS INCIDENTES ---");
         ArrayList<Incidente> todosLosIncidentes = incidenteDAOImpl.findAll();
 
         if (todosLosIncidentes.isEmpty()) {
@@ -121,6 +122,53 @@ public class IncidenteDAOImpl
                         " | Estado: " + inc.getEstado() +
                         " | SOC ID: " + inc.getSoc().getId());
             }
+        }
+
+        // ==========================================
+        // TEST 6: FIND INCIDENTES BY SOC
+        // ==========================================
+        System.out.println("\n--- TEST 6: BÚSQUEDA DE INCIDENTES POR SOC ---");
+
+        // Vamos a buscar los incidentes vinculados al SOC con ID 1
+        int idSocABuscar = 1;
+
+        ArrayList<Incidente> incidentesDelSoc = incidenteDAOImpl.findIncidenteBySoc(idSocABuscar);
+
+        if (incidentesDelSoc.isEmpty()) {
+            System.out.println("No se encontraron incidentes para el SOC con ID: " + idSocABuscar);
+        } else {
+            System.out.println("Se encontraron " + incidentesDelSoc.size() + " incidentes para el SOC " + idSocABuscar + ":");
+
+            // Recorremos la lista para ver qué nos ha traído la base de datos
+            for (Incidente inc : incidentesDelSoc) {
+                System.out.println("   -> Código: " + inc.getCodigoIncidente() +
+                        " | Tipo: " + inc.getTipoIncidente() +
+                        " | Perteneciente al SOC: " + inc.getSoc().getNombre()); // ¡El JOIN en acción!
+            }
+        }
+        // ==========================================
+        // TEST 7: FIND INCIDENTE WITH INFORME (Relación 1:1)
+        // ==========================================
+        System.out.println("\n--- TEST 7: BÚSQUEDA DE INCIDENTE CON INFORME ---");
+
+        // Vamos a buscar el incidente 1, al que le acabamos de poner un informe
+        int idIncidenteABuscar = 2;
+        Incidente incConInforme = incidenteDAOImpl.findWithInforme(idIncidenteABuscar);
+
+        if (incConInforme != null) {
+            System.out.println("Incidente encontrado: " + incConInforme.getCodigoIncidente());
+
+            // Comprobamos si el objeto informe se creó y se guardó correctamente dentro del incidente
+            if (incConInforme.getInforme() != null) {
+                System.out.println("¡El JOIN funcionó! Informe adjunto encontrado:");
+                System.out.println("   -> ¿Malware Detectado?: " + incConInforme.getInforme().isMalwareDetectado());
+                System.out.println("   -> Nivel de Seguridad: " + incConInforme.getInforme().getNivelSeguridad());
+                System.out.println("   -> Conclusión: " + incConInforme.getInforme().getConclusion());
+            } else {
+                System.out.println("El incidente se encontró, pero su informe es null (revisa tu rs.getString en el DAO).");
+            }
+        } else {
+            System.out.println("No se encontró ningún incidente con el ID: " + idIncidenteABuscar);
         }
 
     }
@@ -191,8 +239,6 @@ public class IncidenteDAOImpl
         }finally{
             motorSQL.close();
         }
-
-
     }
 
     @Override
@@ -261,5 +307,94 @@ public class IncidenteDAOImpl
             motorSQL.close();
         }
         return incidentes;
+    }
+
+    public ArrayList<Incidente>findIncidenteBySoc(int socId){
+        //consulta con INNER JOIN
+        String sql = "SELECT i.*, s.* FROM INCIDENTES i INNER JOIN SOCS s ON  i.fk_soc_id = s.id WHERE s.id = ?";
+
+        ArrayList<Incidente> incidentes = new ArrayList<>();
+
+        try{
+            motorSQL.connect();
+            PreparedStatement ps = motorSQL.prepare(sql);
+            ps.setInt(1, socId);
+            ResultSet rs = motorSQL.executeQuery();
+
+            while(rs.next()){
+                //PRIMERO CREAMOS EL PADRE SOC
+                Socs socs = new Socs();
+                socs.setId(socId);
+                socs.setNombre(rs.getString("NOMBRE"));
+                socs.setPais(rs.getString("PAIS"));
+                socs.setNivelSeguridad(rs.getInt("NIVEL_SEGURIDAD"));
+                socs.setAutorExamen(rs.getString("AUTOR_EXAMEN"));
+
+                    //CONSTRUIMOS EL HIJO
+                Incidente incidente = new Incidente();
+                incidente.setId(rs.getInt("ID"));
+                incidente.setCodigoIncidente(rs.getString("CODIGO_INCIDENTE"));
+                incidente.setTipoIncidente(rs.getString("TIPO_INCIDENTE"));
+                incidente.setFechaDeteccion(rs.getString("FECHA_DETECCION"));
+                incidente.setEstado(rs.getString("ESTADO"));
+                incidente.setAutorExamen(rs.getString("AUTOR_EXAMEN"));
+
+                //Metemos el padre dentro del hijo
+                incidente.setSoc(socs);
+
+                //añadimos el incidente terminado a nuestra lista
+                incidentes.add(incidente);
+            }
+
+        }catch (SQLException e){
+            System.out.println("No se encontraron incidentes por el soc id: "+e.getMessage());
+        }finally {
+            motorSQL.close();
+        }
+        return incidentes;
+    }
+
+    public Incidente findWithInforme(int id){
+        //consulta con INNER JOIN
+        String sql = "SELECT i.*, inf.* FROM INCIDENTES i INNER JOIN INFORMES_INCIDENTE inf ON i.id = inf.fk_incidente_id WHERE i.id = ?";
+        Incidente incidente = null;
+
+        try{
+            motorSQL.connect();
+            PreparedStatement ps = motorSQL.prepare(sql);
+            ps.setInt(1, id);
+
+            ResultSet rs = motorSQL.executeQuery();
+
+            while(rs.next()){
+                //Construir el informe segun la tabla INFORMES_INCIDENTE
+                InformeIncidente informe = new InformeIncidente();
+
+                informe.setId(rs.getInt("ID"));
+                informe.setMalwareDetectado(rs.getBoolean("MALWARE_DETECTADO"));
+                informe.setNivelSeguridad(rs.getInt("NIVEL_SEGURIDAD"));
+                informe.setConclusion(rs.getString("CONCLUSION"));
+                informe.setAutorExamen(rs.getString("AUTOR_EXAMEN"));
+
+                //Construir el incidente segun la tabla INCIDENTES
+                incidente = new Incidente();
+                incidente.setId(rs.getInt("ID"));
+                incidente.setCodigoIncidente(rs.getString("CODIGO_INCIDENTE"));
+                incidente.setTipoIncidente(rs.getString("TIPO_INCIDENTE"));
+                incidente.setFechaDeteccion(rs.getString("FECHA_DETECCION"));
+                incidente.setEstado(rs.getString("ESTADO"));
+                incidente.setAutorExamen(rs.getString("AUTOR_EXAMEN"));
+
+                //METER EL INFORME DENTRO DEL INCIDENTE
+                incidente.setInforme(informe);
+            }
+
+        }catch(SQLException e){
+            System.out.println("No se ha encontrado ningun incidente con informe");
+        }finally {
+            motorSQL.close();
+        }
+
+        return incidente;
     }
 }
